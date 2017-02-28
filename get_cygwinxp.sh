@@ -1,4 +1,7 @@
 #!/bin/bash
+##
+# debug switch
+_DEBUG=
 
 # 		Download Cygwin packages compatible with Windows XP
 #         ===================================================
@@ -12,21 +15,30 @@
 #                                            czvtools @ 2016
 #
 
-alias wget="wget --timeout=5" 	# a shorter timeout is desired
+# latest XP Compatible setup.exe version is v2.874
+XP_VER=2.874
+# Officical cygwin mirror
+CYGWIN_TIMEMACHINE=ftp://www.fruitbat.org/pub/cygwin
+
+# 3 at the same time.
+WGET_PROCESSES=3
+# set reasonable wget exec string
+WGET_BIN="wget -c -q"
+
 
 # Download the official mirrors list and the known compatible setup file
-( mkdir -p ./CygwinXP && cd ./CygwinXP && { [[ -s ./mirrors.lst ]] || wget https://cygwin.com/mirrors.lst; } )
+( mkdir -p ./CygwinXP && cd ./CygwinXP && { [[ -s ./mirrors.lst ]] || ${WGET_BIN} https://cygwin.com/mirrors.lst; } )
 # 32bit version
-[[ -s setup-x86-2.874.exe ]] || wget ftp://www.fruitbat.org/pub/cygwin/setup/snapshots/setup-x86-2.874.exe
+[[ -s setup-x86-2.874.exe ]] || ${WGET_BIN} ${CYGWIN_TIMEMACHINE}/setup/snapshots/setup-x86-2.874.exe
 mkdir -p ./CygwinXP/cygwinxp.local/x86
 ( 	cd ./CygwinXP/cygwinxp.local/x86 \
-	&& [[ -s setup.ini ]] || { wget ftp://www.fruitbat.org/pub/cygwin/circa/2016/08/30/104223/x86/setup.bz2 \
+	&& [[ -s setup.ini ]] || { ${WGET_BIN} ${CYGWIN_TIMEMACHINE}/circa/2016/08/30/104223/x86/setup.bz2 \
 	&& bunzip2 setup.bz2 && mv setup setup.ini; } )
 # 64 bit version
-[[ -s setup-x86_64-2.874.exe ]] || wget ftp://www.fruitbat.org/pub/cygwin/setup/snapshots/setup-x86_64-2.874.exe
+[[ -s setup-x86_64-2.874.exe ]] || ${WGET_BIN} ${CYGWIN_TIMEMACHINE}/setup/snapshots/setup-x86_64-2.874.exe
 mkdir -p ./CygwinXP/cygwinxp.local/x86_64
 ( 	cd ./CygwinXP/cygwinxp.local/x86_64 \
-	&& [[ -s setup.ini ]] || { wget ftp://www.fruitbat.org/pub/cygwin/circa/64bit/2016/08/30/104235/x86_64/setup.bz2 \
+	&& [[ -s setup.ini ]] || { ${WGET_BIN} ${CYGWIN_TIMEMACHINE}/circa/64bit/2016/08/30/104235/x86_64/setup.bz2 \
 	&& bunzip2 setup.bz2 && mv setup setup.ini; } )
 
 # Mirrors will be used to retrieve packages in paralel wihtout loading only a single site
@@ -40,19 +52,21 @@ done < ./CygwinXP/mirrors.lst
 # retrieve one package from the first random valid place (last 3 are best candidates that we don't want to stress)
 get_one () {
 	# Attempt from multiple servers because most of the content doesn't change so often
-	wget "${MIRRORS[$((RANDOM%M))]}$1" \
-		|| wget "${MIRRORS[$((RANDOM%M))]}$1" \
-		|| wget "${MIRRORS[$((RANDOM%M))]}$1" \
-		|| wget "${MIRRORS[$((RANDOM%M))]}$1" \
-		|| wget "${MIRRORS[$((RANDOM%M))]}$1" \
-		|| wget "http://ftp.cc.uoc.gr/mirrors/cygwin/$1" \
-		|| wget "http://cygwin.mirror.constant.com/$1" \
-		|| wget "ftp://www.fruitbat.org/pub/cygwin/circa/2016/08/30/104223/$F" \
+	${WGET_BIN} "${MIRRORS[$((RANDOM%M))]}$1" \
+		|| ${WGET_BIN} "${MIRRORS[$((RANDOM%M))]}$1" \
+		|| ${WGET_BIN} "${MIRRORS[$((RANDOM%M))]}$1" \
+		|| ${WGET_BIN} "${MIRRORS[$((RANDOM%M))]}$1" \
+		|| ${WGET_BIN} "${MIRRORS[$((RANDOM%M))]}$1" \
+		|| ${WGET_BIN} "http://ftp.cc.uoc.gr/mirrors/cygwin/$1" \
+		|| ${WGET_BIN} "http://cygwin.mirror.constant.com/$1" \
+		|| ${WGET_BIN} "${CYGWIN_TIMEMACHINE}/circa/2016/08/30/104223/$F" \
 	&& mkdir -p ../${F%/*} && mv ${F##*/} ../${F%/*}
 }
 
-# Retrieve just the "32bit" version... replace "x86" with "x86_64" for the 64 bit
+# Replace "x86" with "x86_64" (and vice versa)
 cd ./CygwinXP/cygwinxp.local/x86
+
+[ -n "${_DEBUG}" ] && echo "# PWD: $PWD"
 
 # extract from setup.ini the packages to download (only latest version) including sources
 COUNT=0   # used to give an idea about the progress
