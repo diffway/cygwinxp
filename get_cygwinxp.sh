@@ -43,7 +43,7 @@ mkdir -p ./CygwinXP/cygwinxp.local/x86_64
     && bunzip2 setup.bz2 && mv setup setup.ini; } )
 
 # Mirrors will be used to retrieve packages in paralel wihtout loading only a single site
-typeset -A MIRRORS 
+typeset -A MIRRORS
 typeset -i M=0
 while IFS=";" read -r URL HOST
 do
@@ -109,15 +109,21 @@ do
         elif [[ $COUNT -lt 1 ]]
         then
              # skip a certain number of packages... should be customized
-             continue  
+             continue
         else
             # download packages in background...
             echo "===== ${COUNT} : ${REL_PATH}"
             get_one "${REL_PATH}" >/dev/null 2>&1 &
         fi
-    
+
         # not much at the same time.
         while [[ $(jobs |wc -l) -gt ${WGET_PROCESSES} ]]; do sleep 1; done
+
+        if [[ $(stat -c '%s' "../${REL_PATH}") -ne "${SIZE_B}" ]]
+        then
+            echo "===== ${COUNT}: ${REL_PATH} size mismatch." >&2
+            rm -f "../$REL_PATH"
+        fi
     done < <(sed --regexp-extended \
         -e '/^@[[:space:]]+'"${PACKAGE}"'$/,/^$/!d' setup.ini \
             |awk '/^install:/{print $2, $3, $4}')
