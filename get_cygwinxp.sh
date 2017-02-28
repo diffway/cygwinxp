@@ -46,7 +46,7 @@ typeset -A MIRRORS
 typeset -i M=0
 while IFS=";" read U a; do
     MIRRORS[$M]="$U"
-    ((M=M+1))
+    ((M++))
 done < ./CygwinXP/mirrors.lst
 
 # retrieve one package from the first random valid place (last 3 are best candidates that we don't want to stress)
@@ -71,7 +71,7 @@ cd ./CygwinXP/cygwinxp.local/x86
 # extract from setup.ini the packages to download (only latest version) including sources
 COUNT=0   # used to give an idea about the progress
 for F in $(grep -E "^@|^install:|^source" setup.ini | grep -A2 '^@' | grep -E "^install:|^Asource:" | awk '{print $2}'); do
-    ((COUNT=COUNT+1))
+    ((COUNT++))
     if [[ -f ../$F ]]; then
         continue  # skip packages that are already present
     elif [[ $COUNT -lt 1 ]]; then
@@ -88,7 +88,7 @@ COUNT=0
 grep -E "^@|^install:|^source" setup.ini | grep -A2 '^@' | grep -E "^install:|^Asource:" | awk '{print $2, $3}' > file.tmp
 exec 5<file.tmp
 while read F S <&5; do
-    ((COUNT=COUNT+1))
+    ((COUNT++))
     # using this was "ls" make it slow, but it works
     [[ $(ls -l ../$F | awk '{print $5}') -eq $S ]] || { echo "$COUNT: $F $S"; rm -f "../$F"; }
 done
