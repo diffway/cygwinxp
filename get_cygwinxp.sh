@@ -29,15 +29,16 @@ WGET_BIN="wget -c -q"
 # Download the official mirrors list and the known compatible setup file
 ( mkdir -p ./CygwinXP && cd ./CygwinXP && { [[ -s ./mirrors.lst ]] || ${WGET_BIN} https://cygwin.com/mirrors.lst; } )
 # 32bit version
-[[ -s setup-x86-2.874.exe ]] || ${WGET_BIN} ${CYGWIN_TIMEMACHINE}/setup/snapshots/setup-x86-2.874.exe
 mkdir -p ./CygwinXP/cygwinxp.local/x86
-(   cd ./CygwinXP/cygwinxp.local/x86 \
+(   cd ./CygwinXP/cygwinxp.local/x86;
+    [[ -s setup-x86-2.874.exe ]] || ${WGET_BIN} ${CYGWIN_TIMEMACHINE}/setup/snapshots/setup-x86-2.874.exe
     && [[ -s setup.ini ]] || { ${WGET_BIN} ${CYGWIN_TIMEMACHINE}/circa/2016/08/30/104223/x86/setup.bz2 \
     && bunzip2 setup.bz2 && mv setup setup.ini; } )
+
 # 64 bit version
-[[ -s setup-x86_64-2.874.exe ]] || ${WGET_BIN} ${CYGWIN_TIMEMACHINE}/setup/snapshots/setup-x86_64-2.874.exe
 mkdir -p ./CygwinXP/cygwinxp.local/x86_64
-(   cd ./CygwinXP/cygwinxp.local/x86_64 \
+(   cd ./CygwinXP/cygwinxp.local/x86_64;
+    [[ -s setup-x86_64-2.874.exe ]] || ${WGET_BIN} ${CYGWIN_TIMEMACHINE}/setup/snapshots/setup-x86_64-2.874.exe
     && [[ -s setup.ini ]] || { ${WGET_BIN} ${CYGWIN_TIMEMACHINE}/circa/64bit/2016/08/30/104235/x86_64/setup.bz2 \
     && bunzip2 setup.bz2 && mv setup setup.ini; } )
 
