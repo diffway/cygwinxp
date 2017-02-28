@@ -105,7 +105,8 @@ do
     do
         if [[ -f "../${REL_PATH}" ]]
         then
-            continue  # skip packages that are already present
+            # skip packages that are already present
+            continue
         elif [[ $COUNT -lt 1 ]]
         then
              # skip a certain number of packages... should be customized
@@ -119,24 +120,22 @@ do
         # not much at the same time.
         while [[ $(jobs |wc -l) -gt ${WGET_PROCESSES} ]]; do sleep 1; done
 
+        if [ -f "../${REL_PATH}" ]
+        then
+            echo "===== ${COUNT}: ${REL_PATH} failed: file not found." >&2
+            # now go to next download
+            continue
+        fi
+
         if [[ $(stat -c '%s' "../${REL_PATH}") -ne "${SIZE_B}" ]]
         then
             echo "===== ${COUNT}: ${REL_PATH} size mismatch." >&2
             rm -f "../$REL_PATH"
         fi
+
     done < <(sed --regexp-extended \
         -e '/^@[[:space:]]+'"${PACKAGE}"'$/,/^$/!d' setup.ini \
             |awk '/^install:/{print $2, $3, $4}')
 done
 
-# check which packages we have with incorrect size... should be deleted and re-downloaded on next run
-COUNT=0
-grep -E "^@|^install:|^source" setup.ini | grep -A2 '^@' | grep -E "^install:|^Asource:" | awk '{print $2, $3}' > file.tmp
-exec 5<file.tmp
-while read REL_PATH SIZE_B <&5; do
-    ((COUNT++))
-    # using this was "ls" make it slow, but it works
-    [[ $(ls -l ../$REL_PATH | awk '{print $5}') -eq $SIZE_B ]] || { echo "$COUNT: $REL_PATH $SIZE_B"; rm -f "../$REL_PATH"; }
-done
-exec 5<&-
-rm -f file.tmp
+exit 1
