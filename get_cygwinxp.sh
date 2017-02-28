@@ -65,8 +65,29 @@ get_one () {
         || ${WGET_BIN} "http://ftp.cc.uoc.gr/mirrors/cygwin/$REL_PATH" \
         || ${WGET_BIN} "http://cygwin.mirror.constant.com/$REL_PATH" \
         || ${WGET_BIN} "${CYGWIN_TIMEMACHINE}/circa/2016/08/30/104223/$REL_PATH" \
-    && mkdir -p ../${REL_PATH%/*} && mv ${REL_PATH##*/} ../${REL_PATH%/*}
+    && move_one "${REL_PATH}" || return 1
 }
+
+##
+# moves package to its dir
+#
+function move_one () {
+
+    local REL_PATH="$1"
+
+    local PACKAGE_FILE="${REL_PATH##*/}"
+    local PACKAGE_PATH="${REL_PATH%/*}"
+
+    if [ -s "${PACKAGE_FILE}" ]
+    then
+        mkdir -vp "../${PACKAGE_PATH}" \
+            && mv -v "${PACKAGE_FILE}" "../${PACKAGE_PATH}" || return 1
+        return 0
+    else
+        return 1
+    fi
+}
+
 
 # Replace "x86" with "x86_64" (and vice versa)
 cd ./CygwinXP/cygwinxp.local/x86
@@ -97,7 +118,6 @@ do
     
         # not much at the same time.
         while [[ $(jobs |wc -l) -gt ${WGET_PROCESSES} ]]; do sleep 1; done
-    
     done < <(sed --regexp-extended \
         -e '/^@[[:space:]]+'"${PACKAGE}"'$/,/^$/!d' setup.ini \
             |awk '/^install:/{print $2, $3, $4}')
