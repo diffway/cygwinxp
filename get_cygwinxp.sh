@@ -73,19 +73,34 @@ cd ./CygwinXP/cygwinxp.local/x86
 
 [ -n "${_DEBUG}" ] && echo "# PWD: $PWD"
 
-# extract from setup.ini the packages to download (only latest version) including sources
-COUNT=0   # used to give an idea about the progress
-for REL_PATH in $(grep -E "^@|^install:|^source" setup.ini | grep -A2 '^@' | grep -E "^install:|^Asource:" | awk '{print $2}'); do
-    ((COUNT++))
-    if [[ -f "../$REL_PATH" ]]; then
-        continue  # skip packages that are already present
-    elif [[ $COUNT -lt 1 ]]; then
-         continue  # skip a certain number of packages... should be customized
-    else
-        echo "===== $COUNT : $REL_PATH" # download packages in background...
-        get_one "$REL_PATH" >/dev/null 2>&1 &
-    fi
-    while [[ $(jobs | wc -l) -gt 3 ]]; do sleep 1 ; done   #... 3 at the same time.
+PACKAGES=( $(awk '/^@/{print $2}' setup.ini ) )
+
+for ((COUNT=0;COUNT<${#PACKAGES[@]};COUNT++))
+do
+    # pick next package
+    PACKAGE="${PACKAGES[$COUNT]}"
+
+    while read -r REL_PATH SIZE_B SHA512
+    do
+        if [[ -f "../${REL_PATH}" ]]
+        then
+            continue  # skip packages that are already present
+        elif [[ $COUNT -lt 1 ]]
+        then
+             # skip a certain number of packages... should be customized
+             continue  
+        else
+            # download packages in background...
+            echo "===== ${COUNT} : ${REL_PATH}"
+            get_one "${REL_PATH}" >/dev/null 2>&1 &
+        fi
+    
+        # not much at the same time.
+        while [[ $(jobs |wc -l) -gt ${WGET_PROCESSES} ]]; do sleep 1; done
+    
+    done < <(sed --regexp-extended \
+        -e '/^@[[:space:]]+'"${PACKAGE}"'$/,/^$/!d' setup.ini \
+            |awk '/^install:/{print $2, $3, $4}')
 done
 
 # check which packages we have with incorrect size... should be deleted and re-downloaded on next run
